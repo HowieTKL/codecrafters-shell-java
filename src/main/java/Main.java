@@ -39,7 +39,13 @@ public class Main {
           }
         }
         default -> {
-          System.out.println(input + ": command not found");
+          if (checkCommand(cmd) != null) {
+            Process process = Runtime.getRuntime().exec(inputs);
+            process.getInputStream().transferTo(System.out);
+            process.getErrorStream().transferTo(System.err);
+          } else {
+            System.out.println(input + ": command not found");
+          }
         }
       }
     }
