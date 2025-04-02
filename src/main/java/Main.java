@@ -9,6 +9,7 @@ public class Main {
     commands.add("echo");
     commands.add("type");
     commands.add("exit");
+    commands.add("pwd");
 
     while (true) {
       System.out.print("$ ");
@@ -37,6 +38,10 @@ public class Main {
               System.out.println(aCmd + ": not found");
             }
           }
+        }
+        case "pwd" -> {
+          File currentDir = new File(System.getProperty("user.dir"));
+          System.out.println(currentDir.getAbsolutePath());
         }
         default -> {
           if (checkCommand(cmd) != null) {
