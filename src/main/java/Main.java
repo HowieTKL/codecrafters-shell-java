@@ -2,6 +2,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -18,7 +19,7 @@ public class Main {
     commands.add("pwd");
     commands.add("cd");
 
-    File currentDir = new File("");
+    File currentDir = new File("").getCanonicalFile();
 
     while (true) {
       System.out.print("$ ");
@@ -49,10 +50,10 @@ public class Main {
           }
         }
         case "pwd" -> {
-          System.out.println(currentDir.getCanonicalPath());
+          System.out.println(currentDir);
         }
         case "cd" -> {
-          File dir = getDir(inputs[1]);
+          File dir = getDir(currentDir, inputs[1]);
           if (dir != null) {
             currentDir = dir;
           } else {
@@ -84,8 +85,11 @@ public class Main {
     return null;
   }
 
-  private static File getDir(String path) {
+  private static File getDir(File currentDir, String path) throws IOException {
     File f = new File(path);
+    if (!f.isAbsolute()) {
+      f = new File(currentDir, path).getCanonicalFile();
+    }
     if (f.exists() && f.isDirectory()) {
       return f;
     }
