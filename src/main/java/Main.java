@@ -1,15 +1,24 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
 public class Main {
+  private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
   public static void main(String[] args) throws Exception {
     Set<String> commands = new HashSet<>();
     commands.add("echo");
     commands.add("type");
     commands.add("exit");
     commands.add("pwd");
+    commands.add("cd");
+
+    File currentDir = new File("");
 
     while (true) {
       System.out.print("$ ");
@@ -40,8 +49,15 @@ public class Main {
           }
         }
         case "pwd" -> {
-          File currentDir = new File(System.getProperty("user.dir"));
-          System.out.println(currentDir.getAbsolutePath());
+          System.out.println(currentDir.getCanonicalPath());
+        }
+        case "cd" -> {
+          File dir = getDir(inputs[1]);
+          if (dir != null) {
+            currentDir = dir;
+          } else {
+            System.out.println(inputs[1] + ": No such file or directory");
+          }
         }
         default -> {
           if (checkCommand(cmd) != null) {
@@ -64,6 +80,14 @@ public class Main {
       if (f.exists() && f.canExecute()) {
         return f.getAbsolutePath();
       }
+    }
+    return null;
+  }
+
+  private static File getDir(String path) {
+    File f = new File(path);
+    if (f.exists() && f.isDirectory()) {
+      return f;
     }
     return null;
   }
