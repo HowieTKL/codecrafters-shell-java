@@ -1,7 +1,14 @@
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
   public static void main(String[] args) throws Exception {
+    Set<String> commands = new HashSet<>();
+    commands.add("echo");
+    commands.add("type");
+    commands.add("exit");
+
     while (true) {
       System.out.print("$ ");
       Scanner scanner = new Scanner(System.in);
@@ -13,9 +20,10 @@ public class Main {
         System.out.println(toEcho);
       } else if (input.startsWith("type")) {
         String cmd = input.substring(5);
-        switch (cmd) {
-          case "echo", "type", "exit" -> System.out.println(cmd + " is a shell builtin");
-          default -> System.out.println(cmd + ": not found");
+        if (commands.contains(cmd)) {
+          System.out.println(cmd + " is a shell builtin");
+        } else {
+          System.out.println(cmd + ": not found");
         }
       } else {
         System.out.println(input + ": command not found");
