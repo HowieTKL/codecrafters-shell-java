@@ -86,6 +86,10 @@ public class Main {
   }
 
   private static File getDir(File currentDir, String path) throws IOException {
+    if (path.startsWith("~")) {
+      path = path.replace("~", System.getenv("HOME"));
+    }
+
     File f = new File(path);
     if (!f.isAbsolute()) {
       f = new File(currentDir, path).getCanonicalFile();
