@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -13,22 +14,48 @@ public class Main {
       System.out.print("$ ");
       Scanner scanner = new Scanner(System.in);
       String input = scanner.nextLine();
-      if ("exit 0".equals(input)) {
-        System.exit(0);
-      } else if (input.startsWith("echo")) {
-        String toEcho = input.substring(5);
-        System.out.println(toEcho);
-      } else if (input.startsWith("type")) {
-        String cmd = input.substring(5);
-        if (commands.contains(cmd)) {
-          System.out.println(cmd + " is a shell builtin");
-        } else {
-          System.out.println(cmd + ": not found");
+      String[] inputs = input.split(" ");
+      String cmd = inputs[0];
+
+      switch (cmd) {
+        case "exit" -> {
+          System.exit(0);
         }
-      } else {
-        System.out.println(input + ": command not found");
+        case "echo" -> {
+          String toEcho = input.substring(5);
+          System.out.println(toEcho);
+        }
+        case "type" -> {
+          String aCmd = inputs[1];
+          if (commands.contains(aCmd)) {
+            System.out.println(aCmd + " is a shell builtin");
+          } else {
+            String path = checkCommand(aCmd);
+            if (path != null) {
+              System.out.println(aCmd + " is " + path);
+            } else {
+              System.out.println(aCmd + ": not found");
+            }
+          }
+        }
+        default -> {
+          System.out.println(input + ": command not found");
+        }
       }
     }
+
   }
+
+  private static String checkCommand(String cmd) {
+    String[] path = System.getenv("PATH").split(":");
+    for (String p : path) {
+      File f = new File(p, cmd);
+      if (f.exists() && f.canExecute()) {
+        return f.getAbsolutePath();
+      }
+    }
+    return null;
+  }
+
 
 }
