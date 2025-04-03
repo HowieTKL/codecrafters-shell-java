@@ -132,7 +132,11 @@ public class Main {
           arg = new StringBuilder();
         }
       } else {
-        arg.append(c);
+        if (c == '\\') {
+          arg.append(input.charAt(++i));
+        } else {
+          arg.append(c);
+        }
       }
     }
     if (!arg.isEmpty()) {
