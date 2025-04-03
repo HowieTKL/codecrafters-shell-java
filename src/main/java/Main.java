@@ -115,9 +115,14 @@ public class Main {
     Deque<String> args = new ArrayDeque<>();
     StringBuilder arg = new StringBuilder();
     boolean inQuotes = false;
+    boolean inDoubleQuotes = false;
     for (int i = 0; i < input.length(); i++) {
       char c = input.charAt(i);
-      if (c == '\'') {
+      if (c == '"') {
+        inDoubleQuotes = !inDoubleQuotes;
+      } else if (inDoubleQuotes) {
+        arg.append(c);
+      } else if (c == '\'') {
         inQuotes = !inQuotes;
       } else if (inQuotes) {
         arg.append(c);
