@@ -3,7 +3,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -25,27 +26,32 @@ public class Main {
       System.out.print("$ ");
       Scanner scanner = new Scanner(System.in);
       String input = scanner.nextLine();
-      String[] inputs = input.split(" ");
-      String cmd = inputs[0];
+      Deque<String> inputs = split(input);
+
+      if (inputs.isEmpty()) {
+        continue;
+      }
+
+      String cmd = inputs.removeFirst();
 
       switch (cmd) {
         case "exit" -> {
           System.exit(0);
         }
         case "echo" -> {
-          String toEcho = input.substring(5);
+          String toEcho = String.join(" ", inputs);
           System.out.println(toEcho);
         }
         case "type" -> {
-          String aCmd = inputs[1];
-          if (commands.contains(aCmd)) {
-            System.out.println(aCmd + " is a shell builtin");
+          String param = inputs.removeFirst();
+          if (commands.contains(param)) {
+            System.out.println(param + " is a shell builtin");
           } else {
-            String path = checkCommand(aCmd);
+            String path = checkCommand(param);
             if (path != null) {
-              System.out.println(aCmd + " is " + path);
+              System.out.println(param + " is " + path);
             } else {
-              System.out.println(aCmd + ": not found");
+              System.out.println(param + ": not found");
             }
           }
         }
@@ -53,16 +59,18 @@ public class Main {
           System.out.println(currentDir);
         }
         case "cd" -> {
-          File dir = getDir(currentDir, inputs[1]);
+          String param = inputs.removeFirst();
+          File dir = getDir(currentDir, param);
           if (dir != null) {
             currentDir = dir;
           } else {
-            System.out.println(inputs[1] + ": No such file or directory");
+            System.out.println(param + ": No such file or directory");
           }
         }
         default -> {
           if (checkCommand(cmd) != null) {
-            Process process = Runtime.getRuntime().exec(inputs);
+            inputs.addFirst(cmd);
+            Process process = Runtime.getRuntime().exec(inputs.toArray(new String[0]));
             process.getInputStream().transferTo(System.out);
             process.getErrorStream().transferTo(System.err);
           } else {
@@ -86,19 +94,46 @@ public class Main {
   }
 
   private static File getDir(File currentDir, String path) throws IOException {
+    // home path ~
     if (path.startsWith("~")) {
       path = path.replace("~", System.getenv("HOME"));
     }
 
+    // relative paths
     File f = new File(path);
     if (!f.isAbsolute()) {
       f = new File(currentDir, path).getCanonicalFile();
     }
+
     if (f.exists() && f.isDirectory()) {
       return f;
     }
     return null;
   }
 
+  private static Deque<String> split(String input) {
+    Deque<String> args = new ArrayDeque<>();
+    StringBuilder arg = new StringBuilder();
+    boolean inQuotes = false;
+    for (int i = 0; i < input.length(); i++) {
+      char c = input.charAt(i);
+      if (c == '\'') {
+        inQuotes = !inQuotes;
+      } else if (inQuotes) {
+        arg.append(c);
+      } else if (Character.isWhitespace(c)) {
+        if (!arg.isEmpty()) {
+          args.add(arg.toString());
+          arg = new StringBuilder();
+        }
+      } else {
+        arg.append(c);
+      }
+    }
+    if (!arg.isEmpty()) {
+      args.add(arg.toString());
+    }
+    return args;
+  }
 
 }
