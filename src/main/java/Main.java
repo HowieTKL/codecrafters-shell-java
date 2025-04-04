@@ -118,13 +118,13 @@ public class Main {
     boolean inDoubleQuotes = false;
     for (int i = 0; i < input.length(); i++) {
       char c = input.charAt(i);
-      if (c == '"') {
-        inDoubleQuotes = !inDoubleQuotes;
-      } else if (inDoubleQuotes) {
-        arg.append(c);
-      } else if (c == '\'') {
+      if (c == '\'' && !inDoubleQuotes) {
         inQuotes = !inQuotes;
       } else if (inQuotes) {
+        arg.append(c);
+      }else if (c == '"') {
+        inDoubleQuotes = !inDoubleQuotes;
+      } else if (inDoubleQuotes) {
         arg.append(c);
       } else if (Character.isWhitespace(c)) {
         if (!arg.isEmpty()) {
