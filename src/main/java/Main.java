@@ -116,16 +116,25 @@ public class Main {
     StringBuilder arg = new StringBuilder();
     boolean inQuotes = false;
     boolean inDoubleQuotes = false;
+    boolean escapingInDoubleQuotes = false;
     for (int i = 0; i < input.length(); i++) {
       char c = input.charAt(i);
       if (c == '\'' && !inDoubleQuotes) {
         inQuotes = !inQuotes;
       } else if (inQuotes) {
         arg.append(c);
-      }else if (c == '"') {
+      } else if (c == '"') {
         inDoubleQuotes = !inDoubleQuotes;
       } else if (inDoubleQuotes) {
-        arg.append(c);
+        if (c == '\\') {
+          c = input.charAt(++i);
+          switch (c) {
+            case '\\', '$', '"' -> arg.append(c);
+            default -> arg.append('\\').append(c);
+          }
+        } else {
+          arg.append(c);
+        }
       } else if (Character.isWhitespace(c)) {
         if (!arg.isEmpty()) {
           args.add(arg.toString());
