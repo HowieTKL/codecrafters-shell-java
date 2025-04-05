@@ -6,14 +6,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
 import java.util.Scanner;
-import java.util.SequencedCollection;
 import java.util.Set;
 
 public class Main {
@@ -76,7 +72,8 @@ public class Main {
             inputs.addFirst(cmd);
             OutputStream out = System.out;
             OutputStream err = System.err;
-            if (inputs.contains(">") || inputs.contains("1>") || inputs.contains("2>")) {
+            if (inputs.contains(">") || inputs.contains("1>") || inputs.contains("2>") ||
+                inputs.contains(">>") || inputs.contains("1>>") || inputs.contains("2>>")) {
               Iterator<String> i = inputs.iterator();
               while (i.hasNext()) {
                 String param = i.next();
@@ -90,6 +87,18 @@ public class Main {
                   i.remove();
                   if (i.hasNext()) {
                     err = new FileOutputStream(i.next());
+                    i.remove();
+                  }
+                } else if (param.equals(">>") || param.equals("1>>")) {
+                  i.remove();
+                  if (i.hasNext()) {
+                    out = new FileOutputStream(i.next(), true);
+                    i.remove();
+                  }
+                } else if (param.equals("2>>")) {
+                  i.remove();
+                  if (i.hasNext()) {
+                    err = new FileOutputStream(i.next(), true);
                     i.remove();
                   }
                 }
