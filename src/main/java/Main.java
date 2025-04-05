@@ -2,11 +2,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
+import java.util.SequencedCollection;
 import java.util.Set;
 
 public class Main {
@@ -39,10 +46,6 @@ public class Main {
         case "exit" -> {
           System.exit(0);
         }
-        case "echo" -> {
-          String toEcho = String.join(" ", inputs);
-          System.out.println(toEcho);
-        }
         case "type" -> {
           String param = inputs.removeFirst();
           if (commands.contains(param)) {
@@ -71,10 +74,31 @@ public class Main {
         default -> {
           if (checkCommand(cmd) != null) {
             inputs.addFirst(cmd);
+            OutputStream out = System.out;
+            OutputStream err = System.err;
+            if (inputs.contains(">") || inputs.contains("1>") || inputs.contains("2>")) {
+              Iterator<String> i = inputs.iterator();
+              while (i.hasNext()) {
+                String param = i.next();
+                if (param.equals(">") || param.equals("1>")) {
+                  i.remove();
+                  if (i.hasNext()) {
+                    out = new FileOutputStream(i.next());
+                    i.remove();
+                  }
+                } else if (param.equals("2>")) {
+                  i.remove();
+                  if (i.hasNext()) {
+                    err = new FileOutputStream(i.next());
+                    i.remove();
+                  }
+                }
+              }
+            }
             processBuilder.command(inputs.toArray(new String[0]));
             Process process = processBuilder.start();
-            process.getInputStream().transferTo(System.out);
-            process.getErrorStream().transferTo(System.err);
+            process.getInputStream().transferTo(out);
+            process.getErrorStream().transferTo(err);
           } else {
             System.out.println(input + ": command not found");
           }
