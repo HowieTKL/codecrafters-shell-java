@@ -20,7 +20,8 @@ public class Main {
     commands.add("pwd");
     commands.add("cd");
 
-    File currentDir = new File("").getCanonicalFile();
+    ProcessBuilder processBuilder = new ProcessBuilder();
+    processBuilder.directory(new File("").getCanonicalFile());
 
     while (true) {
       System.out.print("$ ");
@@ -56,13 +57,13 @@ public class Main {
           }
         }
         case "pwd" -> {
-          System.out.println(currentDir);
+          System.out.println(processBuilder.directory());
         }
         case "cd" -> {
           String param = inputs.removeFirst();
-          File dir = getDir(currentDir, param);
+          File dir = getDir(processBuilder.directory(), param);
           if (dir != null) {
-            currentDir = dir;
+            processBuilder.directory(dir);
           } else {
             System.out.println(param + ": No such file or directory");
           }
@@ -70,7 +71,8 @@ public class Main {
         default -> {
           if (checkCommand(cmd) != null) {
             inputs.addFirst(cmd);
-            Process process = Runtime.getRuntime().exec(inputs.toArray(new String[0]));
+            processBuilder.command(inputs.toArray(new String[0]));
+            Process process = processBuilder.start();
             process.getInputStream().transferTo(System.out);
             process.getErrorStream().transferTo(System.err);
           } else {
