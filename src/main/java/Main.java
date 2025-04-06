@@ -1,3 +1,4 @@
+import org.howietkl.shell.Trie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,9 @@ public class Main {
     commands.add("pwd");
     commands.add("cd");
 
+    Trie trie = new Trie();
+    commands.forEach(trie::insert);
+
     ProcessBuilder processBuilder = new ProcessBuilder();
     processBuilder.directory(new File("").getCanonicalFile());
 
@@ -34,6 +38,10 @@ public class Main {
 
       if (inputs.isEmpty()) {
         continue;
+      }
+
+      if (input.endsWith("\t")) {
+        LOG.debug("{}", inputs);
       }
 
       String cmd = inputs.removeFirst();
@@ -77,29 +85,34 @@ public class Main {
               Iterator<String> i = inputs.iterator();
               while (i.hasNext()) {
                 String param = i.next();
-                if (param.equals(">") || param.equals("1>")) {
-                  i.remove();
-                  if (i.hasNext()) {
-                    out = new FileOutputStream(i.next());
+                switch (param) {
+                  case ">", "1>" -> {
                     i.remove();
+                    if (i.hasNext()) {
+                      out = new FileOutputStream(i.next());
+                      i.remove();
+                    }
                   }
-                } else if (param.equals("2>")) {
-                  i.remove();
-                  if (i.hasNext()) {
-                    err = new FileOutputStream(i.next());
+                  case "2>" -> {
                     i.remove();
+                    if (i.hasNext()) {
+                      err = new FileOutputStream(i.next());
+                      i.remove();
+                    }
                   }
-                } else if (param.equals(">>") || param.equals("1>>")) {
-                  i.remove();
-                  if (i.hasNext()) {
-                    out = new FileOutputStream(i.next(), true);
+                  case ">>", "1>>" -> {
                     i.remove();
+                    if (i.hasNext()) {
+                      out = new FileOutputStream(i.next(), true);
+                      i.remove();
+                    }
                   }
-                } else if (param.equals("2>>")) {
-                  i.remove();
-                  if (i.hasNext()) {
-                    err = new FileOutputStream(i.next(), true);
+                  case "2>>" -> {
                     i.remove();
+                    if (i.hasNext()) {
+                      err = new FileOutputStream(i.next(), true);
+                      i.remove();
+                    }
                   }
                 }
               }
