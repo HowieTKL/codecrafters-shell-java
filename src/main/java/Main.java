@@ -21,46 +21,6 @@ public class Main {
   private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 
-  public static void main(String[] args) throws IOException, InterruptedException {
-    Trie trie = new Trie();
-    trie.insert("echo");
-    trie.insert("exit");
-
-    try (Terminal terminal = TerminalBuilder.builder().build()) {
-      terminal.enterRawMode();
-      while (true) {
-        System.out.print("$ ");
-        StringBuilder buf = new StringBuilder();
-        while (true) {
-          int ch = terminal.reader().read();
-          if (ch == '\t') {
-            List<String> auto = trie.autocomplete(buf.toString());
-            if (auto.size() == 1) {
-              String remaining = auto.getFirst().substring(buf.toString().length());
-              buf.append(remaining);
-              System.out.print(remaining);
-            }
-          } else if (ch == '\r' || ch == '\n') {
-            System.out.println();
-            break;
-          } else if (ch == 127 || ch == '\b') {
-            if (!buf.isEmpty()) {
-              System.out.print("\b \b");
-              buf.deleteCharAt(buf.length() - 1);
-            }
-          } else {
-            buf.append((char) ch);
-            System.out.print((char) ch);
-          }
-        }
-        if ("exit".equals(buf.toString().trim())) {
-          break;
-        }
-      }
-    }
-
-  }
-
   public static void main2(String[] args) throws IOException, InterruptedException {
     ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1");
     processBuilder.inheritIO();
@@ -99,7 +59,7 @@ public class Main {
 
 
 
-  public static void themain(String[] args) throws Exception {
+  public static void main(String[] args) throws Exception {
     Set<String> commands = new HashSet<>();
     commands.add("echo");
     commands.add("type");
@@ -110,129 +70,133 @@ public class Main {
     Trie trie = new Trie();
     commands.forEach(trie::insert);
 
-    ProcessBuilder processBuilder = new ProcessBuilder();
+
+    ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1 < /dev/tty");
     processBuilder.directory(new File("").getCanonicalFile());
+    Process rawMode = processBuilder.start();
+    rawMode.waitFor();
 
-    while (true) {
-      System.out.print("$ ");
-//      Scanner scanner = new Scanner(System.in);
-//      String input = scanner.nextLine();
-
-      StringBuilder inputBuilder = new StringBuilder();
-
+    try (InputStreamReader inputStreamReader = new InputStreamReader(System.in);
+         BufferedReader in = new BufferedReader(inputStreamReader);) {
       while (true) {
-        if (System.in.available() != 0) {
-          int c = System.in.read();
-          if (c == '\t') {
-            System.out.print("tab");
-            System.out.flush();
+        StringBuilder buf = new StringBuilder();
+        System.out.print("$ ");
+        while (true) {
+          int ch = in.read();
+          if (ch == '\t') {
+            List<String> auto = trie.autocomplete(buf.toString());
+            if (auto.size() == 1) {
+              String remaining = auto.getFirst().substring(buf.toString().length()) + " ";
+              buf.append(remaining);
+              System.out.print(remaining);
+            }
+          } else if (ch == '\r' || ch == '\n') {
+            System.out.println();
             break;
-          } else if (c == '\n') {
-              break;
+          } else if (ch == 127 || ch == '\b') {
+            if (!buf.isEmpty()) {
+              System.out.print("\b \b");
+              buf.deleteCharAt(buf.length() - 1);
+            }
           } else {
-            inputBuilder.append((char) c);
-            System.out.print((char) c);
+            buf.append((char) ch);
+            System.out.print((char) ch);
+            System.out.flush();
           }
-
         }
-      }
 
-      String input = inputBuilder.toString();
-
-      Deque<String> inputs = split(input);
-
-      if (inputs.isEmpty()) {
-        continue;
-      }
-
-      if (input.endsWith("\t")) {
-        LOG.debug("{}", inputs);
-      }
-
-      String cmd = inputs.removeFirst();
-
-      switch (cmd) {
-        case "exit" -> {
-          System.exit(0);
+        String input = buf.toString();
+        Deque<String> inputs = split(input);
+        if (inputs.isEmpty()) {
+          continue;
         }
-        case "type" -> {
-          String param = inputs.removeFirst();
-          if (commands.contains(param)) {
-            System.out.println(param + " is a shell builtin");
-          } else {
-            String path = checkCommand(param);
-            if (path != null) {
-              System.out.println(param + " is " + path);
+
+        String cmd = inputs.removeFirst();
+
+        switch (cmd) {
+          case "exit" -> {
+            System.exit(0);
+          }
+          case "type" -> {
+            String param = inputs.removeFirst();
+            if (commands.contains(param)) {
+              System.out.println(param + " is a shell builtin");
             } else {
-              System.out.println(param + ": not found");
+              String path = checkCommand(param);
+              if (path != null) {
+                System.out.println(param + " is " + path);
+              } else {
+                System.out.println(param + ": not found");
+              }
             }
           }
-        }
-        case "pwd" -> {
-          System.out.println(processBuilder.directory());
-        }
-        case "cd" -> {
-          String param = inputs.removeFirst();
-          File dir = getDir(processBuilder.directory(), param);
-          if (dir != null) {
-            processBuilder.directory(dir);
-          } else {
-            System.out.println(param + ": No such file or directory");
+          case "pwd" -> {
+            System.out.println(processBuilder.directory());
           }
-        }
-        default -> {
-          if (checkCommand(cmd) != null) {
-            inputs.addFirst(cmd);
-            OutputStream out = System.out;
-            OutputStream err = System.err;
-            if (inputs.contains(">") || inputs.contains("1>") || inputs.contains("2>") ||
-                inputs.contains(">>") || inputs.contains("1>>") || inputs.contains("2>>")) {
-              Iterator<String> i = inputs.iterator();
-              while (i.hasNext()) {
-                String param = i.next();
-                switch (param) {
-                  case ">", "1>" -> {
-                    i.remove();
-                    if (i.hasNext()) {
-                      out = new FileOutputStream(i.next());
+          case "cd" -> {
+            String param = inputs.removeFirst();
+            File dir = getDir(processBuilder.directory(), param);
+            if (dir != null) {
+              processBuilder.directory(dir);
+            } else {
+              System.out.println(param + ": No such file or directory");
+            }
+          }
+          default -> {
+            if (checkCommand(cmd) != null) {
+              inputs.addFirst(cmd);
+              OutputStream out = System.out;
+              OutputStream err = System.err;
+              if (inputs.contains(">") || inputs.contains("1>") || inputs.contains("2>") ||
+                  inputs.contains(">>") || inputs.contains("1>>") || inputs.contains("2>>")) {
+                Iterator<String> i = inputs.iterator();
+                while (i.hasNext()) {
+                  String param = i.next();
+                  switch (param) {
+                    case ">", "1>" -> {
                       i.remove();
+                      if (i.hasNext()) {
+                        out = new FileOutputStream(i.next());
+                        i.remove();
+                      }
                     }
-                  }
-                  case "2>" -> {
-                    i.remove();
-                    if (i.hasNext()) {
-                      err = new FileOutputStream(i.next());
+                    case "2>" -> {
                       i.remove();
+                      if (i.hasNext()) {
+                        err = new FileOutputStream(i.next());
+                        i.remove();
+                      }
                     }
-                  }
-                  case ">>", "1>>" -> {
-                    i.remove();
-                    if (i.hasNext()) {
-                      out = new FileOutputStream(i.next(), true);
+                    case ">>", "1>>" -> {
                       i.remove();
+                      if (i.hasNext()) {
+                        out = new FileOutputStream(i.next(), true);
+                        i.remove();
+                      }
                     }
-                  }
-                  case "2>>" -> {
-                    i.remove();
-                    if (i.hasNext()) {
-                      err = new FileOutputStream(i.next(), true);
+                    case "2>>" -> {
                       i.remove();
+                      if (i.hasNext()) {
+                        err = new FileOutputStream(i.next(), true);
+                        i.remove();
+                      }
                     }
                   }
                 }
               }
+              processBuilder.command(inputs.toArray(new String[0]));
+              Process process = processBuilder.start();
+              process.getInputStream().transferTo(out);
+              process.getErrorStream().transferTo(err);
+              System.out.flush();
+              process.waitFor();
+            } else {
+              System.out.println(input + ": command not found");
             }
-            processBuilder.command(inputs.toArray(new String[0]));
-            Process process = processBuilder.start();
-            process.getInputStream().transferTo(out);
-            process.getErrorStream().transferTo(err);
-          } else {
-            System.out.println(input + ": command not found");
           }
         }
       }
     }
-
   }
 
   private static String checkCommand(String cmd) {
