@@ -1,22 +1,105 @@
 import org.howietkl.shell.Trie;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Scanner;
+import java.util.List;
 import java.util.Set;
 
 public class Main {
   private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-  public static void main(String[] args) throws Exception {
+
+  public static void main(String[] args) throws IOException, InterruptedException {
+    Trie trie = new Trie();
+    trie.insert("echo");
+    trie.insert("exit");
+
+    try (Terminal terminal = TerminalBuilder.builder().build()) {
+      terminal.enterRawMode();
+      while (true) {
+        System.out.print("$ ");
+        StringBuilder buf = new StringBuilder();
+        while (true) {
+          int ch = terminal.reader().read();
+          if (ch == '\t') {
+            List<String> auto = trie.autocomplete(buf.toString());
+            if (auto.size() == 1) {
+              String remaining = auto.getFirst().substring(buf.toString().length());
+              buf.append(remaining);
+              System.out.print(remaining);
+            }
+          } else if (ch == '\r' || ch == '\n') {
+            System.out.println();
+            break;
+          } else if (ch == 127 || ch == '\b') {
+            if (!buf.isEmpty()) {
+              System.out.print("\b \b");
+              buf.deleteCharAt(buf.length() - 1);
+            }
+          } else {
+            buf.append((char) ch);
+            System.out.print((char) ch);
+          }
+        }
+        if ("exit".equals(buf.toString().trim())) {
+          break;
+        }
+      }
+    }
+
+  }
+
+  public static void main2(String[] args) throws IOException, InterruptedException {
+    ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1");
+    processBuilder.inheritIO();
+    Process rawMode = processBuilder.start();
+
+    try (InputStreamReader inputStreamReader = new InputStreamReader(System.in);
+        BufferedReader in = new BufferedReader(inputStreamReader);) {
+      while (true) {
+        System.out.print("$ ");
+        System.out.flush();
+        StringBuilder buf = new StringBuilder();
+        while (true) {
+          int c = in.read();
+          if (c == '\t') {
+            LOG.debug("tab");
+          } else if (c == '\r' || c == '\n') {
+            System.out.println();
+            break;
+          } else if (c == 127 || c == '\b') {
+            if (!buf.isEmpty()) {
+              buf.deleteCharAt(buf.length() - 1);
+              System.out.print("\b \b");
+            }
+          } else {
+            System.out.print((char) c);
+            buf.append((char) c);
+          }
+        }
+        if ("exit".equals(buf.toString().trim())) {
+          break;
+        }
+      }
+    }
+
+  }
+
+
+
+  public static void themain(String[] args) throws Exception {
     Set<String> commands = new HashSet<>();
     commands.add("echo");
     commands.add("type");
@@ -32,8 +115,30 @@ public class Main {
 
     while (true) {
       System.out.print("$ ");
-      Scanner scanner = new Scanner(System.in);
-      String input = scanner.nextLine();
+//      Scanner scanner = new Scanner(System.in);
+//      String input = scanner.nextLine();
+
+      StringBuilder inputBuilder = new StringBuilder();
+
+      while (true) {
+        if (System.in.available() != 0) {
+          int c = System.in.read();
+          if (c == '\t') {
+            System.out.print("tab");
+            System.out.flush();
+            break;
+          } else if (c == '\n') {
+              break;
+          } else {
+            inputBuilder.append((char) c);
+            System.out.print((char) c);
+          }
+
+        }
+      }
+
+      String input = inputBuilder.toString();
+
       Deque<String> inputs = split(input);
 
       if (inputs.isEmpty()) {
