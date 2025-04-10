@@ -1,6 +1,4 @@
 import org.howietkl.shell.Trie;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,45 +18,6 @@ import java.util.Set;
 public class Main {
   private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
-  public static void main2(String[] args) throws IOException, InterruptedException {
-    ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1");
-    processBuilder.inheritIO();
-    Process rawMode = processBuilder.start();
-
-    try (InputStreamReader inputStreamReader = new InputStreamReader(System.in);
-        BufferedReader in = new BufferedReader(inputStreamReader);) {
-      while (true) {
-        System.out.print("$ ");
-        System.out.flush();
-        StringBuilder buf = new StringBuilder();
-        while (true) {
-          int c = in.read();
-          if (c == '\t') {
-            LOG.debug("tab");
-          } else if (c == '\r' || c == '\n') {
-            System.out.println();
-            break;
-          } else if (c == 127 || c == '\b') {
-            if (!buf.isEmpty()) {
-              buf.deleteCharAt(buf.length() - 1);
-              System.out.print("\b \b");
-            }
-          } else {
-            System.out.print((char) c);
-            buf.append((char) c);
-          }
-        }
-        if ("exit".equals(buf.toString().trim())) {
-          break;
-        }
-      }
-    }
-
-  }
-
-
-
   public static void main(String[] args) throws Exception {
     Set<String> commands = new HashSet<>();
     commands.add("echo");
@@ -70,14 +29,13 @@ public class Main {
     Trie trie = new Trie();
     commands.forEach(trie::insert);
 
-
     ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1 < /dev/tty");
     processBuilder.directory(new File("").getCanonicalFile());
     Process rawMode = processBuilder.start();
     rawMode.waitFor();
 
     try (InputStreamReader inputStreamReader = new InputStreamReader(System.in);
-         BufferedReader in = new BufferedReader(inputStreamReader);) {
+         BufferedReader in = new BufferedReader(inputStreamReader)) {
       while (true) {
         StringBuilder buf = new StringBuilder();
         System.out.print("$ ");
@@ -114,9 +72,7 @@ public class Main {
         String cmd = inputs.removeFirst();
 
         switch (cmd) {
-          case "exit" -> {
-            System.exit(0);
-          }
+          case "exit" -> System.exit(0);
           case "type" -> {
             String param = inputs.removeFirst();
             if (commands.contains(param)) {
@@ -130,9 +86,7 @@ public class Main {
               }
             }
           }
-          case "pwd" -> {
-            System.out.println(processBuilder.directory());
-          }
+          case "pwd" -> System.out.println(processBuilder.directory());
           case "cd" -> {
             String param = inputs.removeFirst();
             File dir = getDir(processBuilder.directory(), param);
