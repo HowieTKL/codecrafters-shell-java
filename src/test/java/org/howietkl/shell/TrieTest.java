@@ -46,7 +46,7 @@ class TrieTest {
   @Test
   void autocomplete() {
     Trie trie = createExampleTrie();
-    assertEquals(List.of("moo", "moose", "moon"), trie.autocomplete("moo"));
+    assertEquals(List.of("moo", "moon", "moose"), trie.autocomplete("moo"));
   }
 
 

@@ -1,7 +1,8 @@
 package org.howietkl.shell;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +59,7 @@ public class Trie {
   }
 
   public List<String> autocomplete(String prefix) {
-    List<String> results = new LinkedList<>();
+    List<String> results = new ArrayList<>();
     Node current = root;
     for (char c : prefix.toCharArray()) {
       if (!current.children.containsKey(c)) {
@@ -67,6 +68,7 @@ public class Trie {
       current = current.children.get(c);
     }
     autocomplete(current, results, prefix);
+    Collections.sort(results);
     return results;
   }
 
