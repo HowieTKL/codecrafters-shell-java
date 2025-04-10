@@ -28,6 +28,7 @@ public class Main {
 
     Trie trie = new Trie();
     commands.forEach(trie::insert);
+    populateFromPath(trie);
 
     ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "stty -echo -icanon min 1 < /dev/tty");
     processBuilder.directory(new File("").getCanonicalFile());
@@ -43,6 +44,7 @@ public class Main {
           int ch = in.read();
           if (ch == '\t') {
             List<String> auto = trie.autocomplete(buf.toString());
+            // LOG.debug(auto.toString());
             if (auto.size() == 1) {
               String remaining = auto.getFirst().substring(buf.toString().length()) + " ";
               buf.append(remaining);
@@ -150,6 +152,19 @@ public class Main {
               System.out.println(input + ": command not found");
             }
           }
+        }
+      }
+    }
+  }
+
+  private static void populateFromPath(final Trie trie) {
+    String[] paths = System.getenv("PATH").split(":");
+    for (String p : paths) {
+      File path = new File(p);
+      File[] files = path.listFiles(pathname -> pathname.canExecute() && pathname.isFile());
+      if (files != null) {
+        for (File f : files) {
+          trie.insert(f.getName());
         }
       }
     }
