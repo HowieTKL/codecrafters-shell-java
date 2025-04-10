@@ -47,6 +47,8 @@ public class Main {
               String remaining = auto.getFirst().substring(buf.toString().length()) + " ";
               buf.append(remaining);
               System.out.print(remaining);
+            } else if (auto.isEmpty()) {
+              System.out.print((char) 7);
             }
           } else if (ch == '\r' || ch == '\n') {
             System.out.println();
