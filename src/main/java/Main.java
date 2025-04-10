@@ -37,20 +37,32 @@ public class Main {
 
     try (InputStreamReader inputStreamReader = new InputStreamReader(System.in);
          BufferedReader in = new BufferedReader(inputStreamReader)) {
+      boolean isFirstTab = false;
+      StringBuilder buf = new StringBuilder();
       while (true) {
-        StringBuilder buf = new StringBuilder();
         System.out.print("$ ");
+        buf.setLength(0);
         while (true) {
           int ch = in.read();
           if (ch == '\t') {
             List<String> auto = trie.autocomplete(buf.toString());
             // LOG.debug(auto.toString());
-            if (auto.size() == 1) {
+            if (auto.isEmpty()) {
+              System.out.print((char) 7);
+            } else if (auto.size() == 1) {
               String remaining = auto.getFirst().substring(buf.toString().length()) + " ";
               buf.append(remaining);
               System.out.print(remaining);
-            } else if (auto.isEmpty()) {
-              System.out.print((char) 7);
+            } else if (auto.size() > 1) {
+              if (isFirstTab) {
+                System.out.println();
+                System.out.println(String.join("  ", auto));
+                System.out.print("$ " + buf.toString());
+                isFirstTab = false;
+              } else {
+                System.out.print((char) 7);
+                isFirstTab = true;
+              }
             }
           } else if (ch == '\r' || ch == '\n') {
             System.out.println();
