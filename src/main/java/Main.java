@@ -47,7 +47,6 @@ public class Main {
           int ch = in.read();
           if (ch == '\t') {
             List<String> auto = trie.autocomplete(buf.toString());
-            // LOG.debug(auto.toString());
             if (auto.isEmpty()) {
               System.out.print((char) 7);
             } else if (auto.size() == 1) {
@@ -66,7 +65,7 @@ public class Main {
                 isFirstTab = false;
               } else {
                 System.out.print((char) 7);
-                isFirstTab = true;
+                isFirstTab = remaining.length() == 0;
               }
             }
           } else if (ch == '\r' || ch == '\n') {
