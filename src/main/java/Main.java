@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,7 +54,11 @@ public class Main {
               String remaining = auto.getFirst().substring(buf.toString().length()) + " ";
               buf.append(remaining);
               System.out.print(remaining);
-            } else if (auto.size() > 1) {
+            } else {
+              String longestPrefix = getLongestPrefix(auto);
+              String remaining = longestPrefix.substring(buf.toString().length());
+              buf.append(remaining);
+              System.out.print(remaining);
               if (isFirstTab) {
                 System.out.println();
                 System.out.println(String.join("  ", auto));
@@ -252,6 +257,22 @@ public class Main {
       args.add(arg.toString());
     }
     return args;
+  }
+
+  private static String getLongestPrefix(List<String> list) {
+    Collections.sort(list);
+    String firstWord = list.getFirst();
+    int i;
+    outer:
+    for (i = 0; i < firstWord.length(); i++) {
+      char c = firstWord.charAt(i);
+      for (String jWord : list) {
+        if (jWord.length() > i && c != jWord.charAt(i)) {
+          break outer;
+        }
+      }
+    }
+    return firstWord.substring(0, i);
   }
 
 }
